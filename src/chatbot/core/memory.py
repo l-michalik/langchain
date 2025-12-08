@@ -1,9 +1,17 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Literal
+from dataclasses import dataclass
 
 from langchain_core.messages import BaseMessage
 from core.logging import CYAN, get_logger
+
+
+@dataclass
+class ProjectWorkflowState:
+    budget: float | None = None
+    description: str | None = None
+    step_index: int = 0
 
 
 class ConversationStore:
@@ -11,7 +19,7 @@ class ConversationStore:
         self._sessions: Dict[str, List[BaseMessage]] = {}
         self._active_workflows: Dict[str, Literal["none", "brief", "project"]] = {}
         self._current_session_id: str | None = None
-        self._workflows: Dict[str, Dict[str, Dict[str, Any]]] = {}
+        self._workflows: Dict[str, Any] = {}
         self._logger = get_logger("WORKFLOW_STATE", CYAN)
 
     def read(self, session_id: str) -> List[BaseMessage]:
@@ -25,7 +33,10 @@ class ConversationStore:
 
     def set_active_workflow(self, session_id: str, workflow: Literal["none", "brief", "project"]) -> None:
         self._active_workflows[session_id] = workflow
-        self.set_workflow_step_index(session_id, 0)
+        if workflow == "project":
+            self.init_project_workflow(session_id)
+        else:
+            self.set_workflow_step_index(session_id, 0)
 
     def set_current_session(self, session_id: str) -> None:
         self._current_session_id = session_id
@@ -33,13 +44,30 @@ class ConversationStore:
     def get_current_session(self) -> str | None:
         return self._current_session_id
 
+    def init_project_workflow(self, session_id: str) -> None:
+        self._workflows["project"] = ProjectWorkflowState()
+        self._logger.debug(repr(self._workflows))
+
     def set_workflow_value(self, session_id: str, workflow: str, key: str, value: Any) -> None:
-        workflow_state = self._workflows.setdefault(session_id, {}).setdefault(workflow, {})
-        workflow_state[key] = value
+        if workflow == "project":
+            state = self._workflows.get("project")
+            if not isinstance(state, ProjectWorkflowState):
+                state = ProjectWorkflowState()
+                self._workflows["project"] = state
+            if hasattr(state, key):
+                setattr(state, key, value)
+        else:
+            workflow_state = self._workflows.setdefault(workflow, {})
+            workflow_state[key] = value
         self._logger.debug(repr(self._workflows))
 
     def get_workflow_value(self, session_id: str, workflow: str, key: str) -> Any | None:
-        return self._workflows.get(session_id, {}).get(workflow, {}).get(key)
+        if workflow == "project":
+            state = self._workflows.get("project")
+            if isinstance(state, ProjectWorkflowState):
+                return getattr(state, key, None)
+            return None
+        return self._workflows.get(workflow, {}).get(key)
 
     def get_workflow_step_index(self, session_id: str) -> int:
         workflow = self.get_active_workflow(session_id)

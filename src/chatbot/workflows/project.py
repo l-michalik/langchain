@@ -45,7 +45,22 @@ def validate_project_description(description: str) -> tuple[bool, str | None]:
         return False, "Description must be a string."
     if len(description) < 20:
         return False, "Description must be at least 20 characters long."
+    store = get_conversation_store()
+    session_id = store.get_current_session()
+    if session_id is not None:
+        store.set_workflow_value(session_id, "project", "description", description)
     return True, None
+
+
+def get_current_project_description() -> str | None:
+    store = get_conversation_store()
+    session_id = store.get_current_session()
+    if session_id is None:
+        return None
+    value = store.get_workflow_value(session_id, "project", "description")
+    if not isinstance(value, str):
+        return None
+    return value
 
 
 WORKFLOW_STEPS: list[WorkflowStep] = [
