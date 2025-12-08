@@ -6,8 +6,11 @@ from fastapi import APIRouter, Form, HTTPException
 
 from schemas.chat import ChatRequest, ChatResponse
 from services.chat import handle_chat
+from core.logging import get_logger
 
 router = APIRouter()
+
+logger = get_logger("chatbot.app.routers")
 
 
 @router.post("", response_model=ChatResponse)
@@ -28,6 +31,7 @@ async def chat_invoke(
     try:
         return await handle_chat(chat_request)
     except Exception as exc:
+        logger.error("Error handling chat request: %s", exc, exc_info=True)    
         raise HTTPException(
             status_code=500,
             detail="An error occurred while processing your request. Please try again later.",

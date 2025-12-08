@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from functools import lru_cache
 
+from dotenv import load_dotenv
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -11,12 +13,11 @@ class Settings:
     openai_temperature: float
     debug: bool
 
-
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    debug = os.getenv("DEBUG", "true").lower()
+    load_dotenv()
     return Settings(
         openai_model_name=os.getenv("OPENAI_MODEL_NAME"),
-        openai_temperature=float(os.getenv("OPENAI_TEMPERATURE")),
-        debug=debug,
+        openai_temperature=os.getenv("OPENAI_TEMPERATURE"),
+        debug=os.getenv("DEBUG"),
     )
