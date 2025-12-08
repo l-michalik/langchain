@@ -7,7 +7,7 @@ from langchain_core.tools import tool
 from core.logging import get_logger
 from core.memory import get_conversation_store
 from schemas.tools import SetActiveWorkflowInput
-
+from core.logging import YELLOW
 
 @tool("set_active_workflow", args_schema=SetActiveWorkflowInput)
 def set_active_workflow_tool(workflow: Literal["none", "brief", "project"]) -> str:
@@ -19,11 +19,11 @@ def set_active_workflow_tool(workflow: Literal["none", "brief", "project"]) -> s
     - 'brief'  – short, concise answers
     - 'project' – more detailed, project-oriented assistance
     """
-    logger = get_logger("chatbot.tools.workflow")
-    logger.debug("Invoked with workflow=%s", workflow)
+    logger = get_logger("SET_ACTIVE_WORKFLOW_TOOL", YELLOW)
     store = get_conversation_store()
     session_id = store.get_current_session()
     if session_id is None:
         return "No active session; cannot set workflow."
     store.set_active_workflow(session_id, workflow)
-    return f"Active workflow for current session set to '{workflow}'."
+    logger.debug(f"Active workflow for current session set to '{workflow}'.")
+    return
