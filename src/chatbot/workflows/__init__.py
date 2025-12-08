@@ -14,7 +14,6 @@ from core.logging import BLUE, get_logger
 from core.memory import get_conversation_store
 from tools.datetime import relative_date_tool
 from tools.workflow import set_active_workflow_tool
-from tools.project import create_project_tool
 from .base import ValidatorFn
 from . import brief as _brief_workflow
 from . import none as _none_workflow
@@ -170,7 +169,7 @@ def _prompt_without_history(messages: list[BaseMessage]) -> str:
 
 
 def _build_chat_graph(llm: BaseChatModel):
-    tools = [relative_date_tool, set_active_workflow_tool, create_project_tool]
+    tools = [relative_date_tool, set_active_workflow_tool]
     tool_node = ToolNode(tools)
     llm_with_tools = llm.bind_tools(tools)
 

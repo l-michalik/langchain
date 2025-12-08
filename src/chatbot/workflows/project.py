@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from core.memory import get_conversation_store
-from tools.project import create_project_tool
 from .base import ValidatorFn, WorkflowStep
+from crm.create_project import create_project
 
 WORKFLOW_INSTRUCTION = "Follow a structured process to gather inputs for creating a project."
 
@@ -51,6 +51,8 @@ def validate_project_description(description: str) -> tuple[bool, str | None]:
 def validate_project_confirmation(confirmed: bool) -> tuple[bool, str | None]:
     if not confirmed:
         return False, 'What would you like to change? Please provide the updated information.'
+    
+    create_project()
     return True, None
 
 
