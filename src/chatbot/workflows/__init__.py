@@ -11,6 +11,7 @@ from langgraph.prebuilt import ToolNode
 from chains.chat import CHAT_PROMPT
 from clients.llm import get_chat_llm
 from core.logging import BLUE, get_logger
+from core.memory import get_conversation_store
 from tools.datetime import relative_date_tool
 from tools.workflow import set_active_workflow_tool
 from . import brief as _brief_workflow
@@ -56,8 +57,31 @@ def _build_chat_graph(llm: BaseChatModel):
     tool_node = ToolNode(tools)
     llm_with_tools = llm.bind_tools(tools)
 
+    def _refresh_system_workflow_instruction(messages: list[BaseMessage]) -> None:
+        """Update system message with the latest workflow instruction."""
+        store = get_conversation_store()
+        session_id = store.get_current_session()
+        if session_id is None:
+            return
+
+        active_workflow: WorkflowName = store.get_active_workflow(session_id)  # type: ignore[assignment]
+        workflow_instruction = get_workflow_instruction(active_workflow)
+
+        marker = "WORKFLOW INSTRUCTIONS:"
+        for message in messages:
+            msg_type = getattr(message, "type", "")
+            if msg_type != "system":
+                continue
+            content = getattr(message, "content", "")
+            if not isinstance(content, str) or marker not in content:
+                continue
+            prefix, _ = content.split(marker, 1)
+            message.content = f"{prefix}{marker} {workflow_instruction}"
+            break
+
     async def call_model(state: MessagesState) -> Dict[str, Any]:
         messages: list[BaseMessage] = state["messages"]  # type: ignore[assignment]
+        _refresh_system_workflow_instruction(messages)
         logger.debug("%s", _prompt_without_history(messages))
         response = await llm_with_tools.ainvoke(state["messages"])
         return {"messages": [response]}
