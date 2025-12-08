@@ -166,7 +166,7 @@ def _prompt_without_history(messages: list[BaseMessage]) -> str:
 
 
 def _build_chat_graph(llm: BaseChatModel):
-    tools = [relative_date_tool, set_active_workflow_tool]
+    tools = [set_active_workflow_tool]
     tool_node = ToolNode(tools)
     llm_with_tools = llm.bind_tools(tools)
 
