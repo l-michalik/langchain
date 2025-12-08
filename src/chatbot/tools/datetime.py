@@ -11,7 +11,7 @@ from core.logging import GREEN
 
 @tool("relative_date", args_schema=RelativeDateInput)
 def relative_date_tool(current_datetime: str, timezone: str, offset_days: int, day_type: str = "calendar") -> str:
-    """Return a date offset from the given datetime in the specified timezone using calendar or business days."""
+    """Use this tool as a helper to calculate a date offset from a given datetime in a specified timezone if user mention something about date"""
     logger = get_logger("RELATIVE_DATE_TOOL", color=GREEN)
     start = parse_datetime(current_datetime, timezone)
     if day_type == "business":
