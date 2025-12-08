@@ -4,7 +4,7 @@ from typing import TypedDict
 
 
 class WorkflowStep(TypedDict):
-    key: str
+    key: str | None
     instruction: str
 
 
