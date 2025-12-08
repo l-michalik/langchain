@@ -15,9 +15,19 @@ def _set_workflow_value(key: str, subkey: str, value: any) -> None:
 
 
 def validate_project_budget(budget: float) -> tuple[bool, str | None]:
-    """Validate the project budget."""
+    text = str(budget)
+    num_str = ""
+    for ch in text:
+        if ch.isdigit() or (ch == "." and "." not in num_str):
+            num_str += ch
+        elif num_str:
+            break
+
+    if not num_str:
+        return False, "Budget must be a number."
+
     try:
-        value = float(budget)
+        value = float(num_str)
     except (TypeError, ValueError):
         return False, "Budget must be a number."
 
@@ -29,7 +39,6 @@ def validate_project_budget(budget: float) -> tuple[bool, str | None]:
 
 
 def validate_project_description(description: str) -> tuple[bool, str | None]:
-    """Validate the project description."""
     if not isinstance(description, str):
         return False, "Description must be a string."
     if len(description) < 20:

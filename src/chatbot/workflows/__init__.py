@@ -34,7 +34,6 @@ def get_workflow_instruction(workflow: WorkflowName) -> str:
 
 
 def get_workflow_step_instruction(workflow: WorkflowName) -> str:
-    """Return the instruction for the current step of the active workflow."""
     store = get_conversation_store()
     session_id = store.get_current_session()
     step_index = 0
@@ -90,7 +89,6 @@ def _get_validator_description(validator: Any) -> str:
 
 
 def get_workflow_step_validator(workflow: WorkflowName) -> ValidatorFn | None:
-    """Return the Python validator function for the current workflow step, if any."""
     store = get_conversation_store()
     session_id = store.get_current_session()
     step_index = 0
@@ -117,6 +115,37 @@ def get_workflow_step_validator(workflow: WorkflowName) -> ValidatorFn | None:
     if callable(validator):
         return validator
     return None
+
+
+def get_workflow_step_field(workflow: WorkflowName) -> tuple[str | None, str | None]:
+    store = get_conversation_store()
+    session_id = store.get_current_session()
+    step_index = 0
+    if session_id is not None:
+        step_index = store.get_workflow_step_index(session_id)
+
+    if workflow == "brief":
+        raw = getattr(_brief_workflow, "WORKFLOW_STEPS", [])
+    elif workflow == "project":
+        raw = getattr(_project_workflow, "WORKFLOW_STEPS", [])
+    else:
+        raw = getattr(_none_workflow, "WORKFLOW_STEPS", [])
+
+    if not raw or step_index < 0 or step_index >= len(raw):
+        return None, None
+
+    step: Any = raw[step_index]
+    if hasattr(step, "get"):
+        field_name = step.get("key")
+    else:
+        field_name = getattr(step, "key", None)
+
+    if field_name is None:
+        return None, None
+
+    name_str = str(field_name)
+    field_type = "number" if workflow == "project" and name_str == "budget" else "string"
+    return name_str, field_type
 
 
 def _prompt_without_history(messages: list[BaseMessage]) -> str:
@@ -218,4 +247,5 @@ __all__ = [
     "get_workflow_instruction",
     "get_workflow_step_instruction",
     "get_workflow_step_validator",
+    "get_workflow_step_field",
 ]
