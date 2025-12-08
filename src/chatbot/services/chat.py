@@ -9,7 +9,12 @@ from chains.chat import CHAT_PARSER, CHAT_PROMPT
 from core.memory import get_conversation_store
 from schemas.chat import ChatRequest, ChatResponse
 from utils.datetime import now_iso_in_timezone
-from workflows import get_chat_graph, get_workflow_instruction, get_workflow_step_instruction
+from workflows import (
+    get_chat_graph,
+    get_workflow_instruction,
+    get_workflow_step_instruction,
+    get_workflow_step_validator,
+)
 
 
 async def handle_chat(chat_request: ChatRequest) -> ChatResponse:
@@ -22,6 +27,19 @@ async def handle_chat(chat_request: ChatRequest) -> ChatResponse:
     active_workflow = store.get_active_workflow(session_id)
     workflow_instruction = get_workflow_instruction(active_workflow)
     workflow_step_instruction = get_workflow_step_instruction(active_workflow)
+
+    # Run workflow step validator (if any) on the raw user query
+    validator = get_workflow_step_validator(active_workflow)
+    if validator is not None:
+        is_valid, error_msg = validator(chat_request.query)
+        if not is_valid:
+            answer_text = error_msg or "Input is not valid for this step."
+            store.append(
+                session_id,
+                HumanMessage(content=chat_request.query),
+                AIMessage(content=answer_text),
+            )
+            return ChatResponse(answer=answer_text)
 
     current_datetime, normalized_timezone = now_iso_in_timezone(
         chat_request.timezone

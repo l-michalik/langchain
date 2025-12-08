@@ -14,6 +14,7 @@ from core.logging import BLUE, get_logger
 from core.memory import get_conversation_store
 from tools.datetime import relative_date_tool
 from tools.workflow import set_active_workflow_tool
+from .base import ValidatorFn
 from . import brief as _brief_workflow
 from . import none as _none_workflow
 from . import project as _project_workflow
@@ -46,12 +47,61 @@ def get_workflow_step_instruction(workflow: WorkflowName) -> str:
     step: Any = raw[0]
     if hasattr(step, "get"):
         instruction = step.get("instruction")
+        validator = step.get("validator")
     else:
         instruction = getattr(step, "instruction", None)
+        validator = getattr(step, "validator", None)
 
     if instruction is None:
         return ""
-    return str(instruction).strip()
+
+    base_instruction = str(instruction).strip()
+    validator_text = _get_validator_description(validator)
+    if validator_text:
+        return f"{base_instruction}\n\nVALIDATION RULES:\n{validator_text}"
+
+    return base_instruction
+
+
+def _get_validator_description(validator: Any) -> str:
+    """Extract a human-readable description from a validator.
+
+    - If it's a callable, use its docstring (if present).
+    - If it's a string, return it as-is.
+    """
+    if validator is None:
+        return ""
+    if callable(validator):
+        doc = getattr(validator, "__doc__", None)
+        if isinstance(doc, str):
+            return doc.strip()
+        return ""
+    if isinstance(validator, str):
+        return validator.strip()
+    return ""
+
+
+def get_workflow_step_validator(workflow: WorkflowName) -> ValidatorFn | None:
+    """Return the Python validator function for the current workflow step, if any."""
+    if workflow == "brief":
+        raw = getattr(_brief_workflow, "WORKFLOW_STEPS", [])
+    elif workflow == "project":
+        raw = getattr(_project_workflow, "WORKFLOW_STEPS", [])
+    else:
+        raw = getattr(_none_workflow, "WORKFLOW_STEPS", [])
+
+    if not raw:
+        return None
+
+    step: Any = raw[0]
+    if hasattr(step, "get"):
+        validator = step.get("validator")
+    else:
+        validator = getattr(step, "validator", None)
+
+    if callable(validator):
+        return validator
+    return None
 
 
 def _prompt_without_history(messages: list[BaseMessage]) -> str:
@@ -147,4 +197,10 @@ def get_chat_graph():
     return _build_chat_graph(llm)
 
 
-__all__ = ["get_chat_graph", "CHAT_PROMPT", "get_workflow_instruction", "get_workflow_step_instruction"]
+__all__ = [
+    "get_chat_graph",
+    "CHAT_PROMPT",
+    "get_workflow_instruction",
+    "get_workflow_step_instruction",
+    "get_workflow_step_validator",
+]
