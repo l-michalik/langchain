@@ -23,8 +23,10 @@ async def handle_chat(chat_request: ChatRequest) -> ChatResponse:
 
     store.set_current_session(session_id)
 
-    if not await validate_workflow_step(store, session_id, chat_request):
-        return ChatResponse(answer="Input is not valid for this step.")
+    is_valid = await validate_workflow_step(store, session_id, chat_request)
+    if not is_valid:
+        last_ai_message = store.read(session_id)[-1]
+        return ChatResponse(answer=last_ai_message.content)
 
     prompt_messages = await prepare_prompt_messages(store, session_id, chat_request)
     answer_text = await generate_response(prompt_messages)

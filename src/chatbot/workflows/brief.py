@@ -13,6 +13,8 @@ def _set_brief_value(key: str, value: str) -> None:
         store.set_workflow_value(session_id, "brief", key, value)
         
 def validate_description(description: str) -> tuple[bool, str | None]:
+    if len(description) < 20:
+        return False, "Description must be at least 20 characters long."
     _set_brief_value("description", description)
     return True, None
 
@@ -20,6 +22,11 @@ WORKFLOW_STEPS: list[WorkflowStep] = [
     WorkflowStep(
         key="description",
         instruction="Ask user: 'Please enter a brief description of what needs to be done, including specifications, quantity of items, and any other details that may be required for WAA to execute this brief.'",
+        validator=validate_description,
+    ),
+    WorkflowStep(
+        key="x",
+        instruction="Ask user: 'what is x?'",
         validator=validate_description,
     ),
 ]
