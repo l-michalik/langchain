@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from core.memory import get_conversation_store
+from tools.project import create_project_tool
 from .base import ValidatorFn, WorkflowStep
 
 WORKFLOW_INSTRUCTION = "Follow a structured process to gather inputs for creating a project."
 
 
 def _set_workflow_value(key: str, subkey: str, value: any) -> None:
-    """Helper function to set a workflow value in the conversation store."""
     store = get_conversation_store()
     session_id = store.get_current_session()
     if session_id is not None:
@@ -48,6 +48,12 @@ def validate_project_description(description: str) -> tuple[bool, str | None]:
     return True, None
 
 
+def validate_project_confirmation(confirmed: bool) -> tuple[bool, str | None]:
+    if not confirmed:
+        return False, 'What would you like to change? Please provide the updated information.'
+    return True, None
+
+
 WORKFLOW_STEPS: list[WorkflowStep] = [
     WorkflowStep(
         key="budget",
@@ -58,5 +64,10 @@ WORKFLOW_STEPS: list[WorkflowStep] = [
         key="deadline",
         instruction="Ask user what is project description",
         validator=validate_project_description,
+    ),
+    WorkflowStep(
+        key="confirm",
+        instruction="Show the project budget and description summary to the user and ask if everything is correct. If the user confirms, finalize the project by calling the 'create_project_tool'.",
+        validator=validate_project_confirmation,
     ),
 ]
