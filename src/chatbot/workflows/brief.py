@@ -11,18 +11,23 @@ def _set_brief_value(key: str, value: str) -> None:
     session_id = store.get_current_session()
     if session_id is not None:
         store.set_workflow_value(session_id, "brief", key, value)
+        
+def validate_description(description: str) -> tuple[bool, str | None]:
+    _set_brief_value("description", description)
+    return True, None
 
 WORKFLOW_STEPS: list[WorkflowStep] = [
-    WorkflowStep(
-        key="work_types",
-        instruction="Ask the user what type of work they need (e.g. design, research, engineering).",
-    ),
-    WorkflowStep(
-        key="name",
-        instruction="Ask the user for their name.",
-    ),
+    # WorkflowStep(
+    #     key="work_types",
+    #     instruction="Ask the user what type of work they need (e.g. design, research, engineering).",
+    # ),
+    # WorkflowStep(
+    #     key="name",
+    #     instruction="Ask the user for their name.",
+    # ),
     WorkflowStep(
         key="description",
         instruction="Ask user: 'Please enter a brief description of what needs to be done, including specifications, quantity of items, and any other details that may be required for WAA to execute this brief.'",
+        validator=validate_description,
     ),
 ]
