@@ -1,0 +1,13 @@
+[project]
+name = "AI-CHATBOT-AGENT"
+version = "1.0.0"
+description = "Joule AI Chatbot Agent"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi==0.124.0",
+    "langchain==1.1.2",
+    "langchain-openai==1.1.0",
+    "langgraph==1.0.4",
+    "python-dotenv==1.2.1",
+]
