@@ -34,6 +34,14 @@ def get_workflow_instruction(workflow: WorkflowName) -> str:
 
 
 def get_workflow_step_instruction(workflow: WorkflowName) -> str:
+    """Return the instruction for the current step of the active workflow."""
+    store = get_conversation_store()
+    session_id = store.get_current_session()
+    step_index = 0
+    if session_id is not None:
+        step_index = store.get_workflow_step_index(session_id)
+
+    raw: list[Any]
     if workflow == "brief":
         raw = getattr(_brief_workflow, "WORKFLOW_STEPS", [])
     elif workflow == "project":
@@ -41,10 +49,10 @@ def get_workflow_step_instruction(workflow: WorkflowName) -> str:
     else:
         raw = getattr(_none_workflow, "WORKFLOW_STEPS", [])
 
-    if not raw:
+    if not raw or step_index < 0 or step_index >= len(raw):
         return ""
 
-    step: Any = raw[0]
+    step: Any = raw[step_index]
     if hasattr(step, "get"):
         instruction = step.get("instruction")
         validator = step.get("validator")
@@ -83,6 +91,13 @@ def _get_validator_description(validator: Any) -> str:
 
 def get_workflow_step_validator(workflow: WorkflowName) -> ValidatorFn | None:
     """Return the Python validator function for the current workflow step, if any."""
+    store = get_conversation_store()
+    session_id = store.get_current_session()
+    step_index = 0
+    if session_id is not None:
+        step_index = store.get_workflow_step_index(session_id)
+
+    raw: list[Any]
     if workflow == "brief":
         raw = getattr(_brief_workflow, "WORKFLOW_STEPS", [])
     elif workflow == "project":
@@ -90,10 +105,10 @@ def get_workflow_step_validator(workflow: WorkflowName) -> ValidatorFn | None:
     else:
         raw = getattr(_none_workflow, "WORKFLOW_STEPS", [])
 
-    if not raw:
+    if not raw or step_index < 0 or step_index >= len(raw):
         return None
 
-    step: Any = raw[0]
+    step: Any = raw[step_index]
     if hasattr(step, "get"):
         validator = step.get("validator")
     else:

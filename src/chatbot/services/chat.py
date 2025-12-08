@@ -25,10 +25,7 @@ async def handle_chat(chat_request: ChatRequest) -> ChatResponse:
 
     session_history = store.read(session_id)
     active_workflow = store.get_active_workflow(session_id)
-    workflow_instruction = get_workflow_instruction(active_workflow)
-    workflow_step_instruction = get_workflow_step_instruction(active_workflow)
 
-    # Run workflow step validator (if any) on the raw user query
     validator = get_workflow_step_validator(active_workflow)
     if validator is not None:
         is_valid, error_msg = validator(chat_request.query)
@@ -40,6 +37,10 @@ async def handle_chat(chat_request: ChatRequest) -> ChatResponse:
                 AIMessage(content=answer_text),
             )
             return ChatResponse(answer=answer_text)
+        store.advance_workflow_step(session_id)
+
+    workflow_instruction = get_workflow_instruction(active_workflow)
+    workflow_step_instruction = get_workflow_step_instruction(active_workflow)
 
     current_datetime, normalized_timezone = now_iso_in_timezone(
         chat_request.timezone
