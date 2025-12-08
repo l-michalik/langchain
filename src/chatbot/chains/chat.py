@@ -15,8 +15,12 @@ CHAT_PROMPT = ChatPromptTemplate.from_messages(
         (
             "system",
             (
-                "Provide helpful answers using the format below. {format_instructions} "
-                "Current datetime: {current_datetime} ({timezone}). "
+                """
+Provide helpful answers using the format below. 
+{format_instructions}
+
+Current datetime: {current_datetime} ({timezone}).
+                """
             ),
         ),
         MessagesPlaceholder(variable_name="history"),

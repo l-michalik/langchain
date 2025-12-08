@@ -3,14 +3,38 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Any, Dict
 
-from langgraph.graph import MessagesState, StateGraph, END
-from langgraph.prebuilt import ToolNode
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import BaseMessage
+from langgraph.graph import END, MessagesState, StateGraph
+from langgraph.prebuilt import ToolNode
 
 from chains.chat import CHAT_PROMPT
 from clients.llm import get_chat_llm
+from core.logging import BLUE, get_logger
 from tools.datetime import relative_date_tool
 from tools.workflow import set_active_workflow_tool
+
+logger = get_logger("PROMPT", BLUE)
+
+
+def _prompt_without_history(messages: list[BaseMessage]) -> str:
+    system_msg: BaseMessage | None = None
+    last_human: BaseMessage | None = None
+
+    for message in messages:
+        msg_type = getattr(message, "type", "")
+        if msg_type == "system" and system_msg is None:
+            system_msg = message
+        if msg_type == "human":
+            last_human = message
+
+    parts: list[str] = []
+    if system_msg is not None:
+        parts.append(f"SYSTEM:\n{system_msg.content}")
+    if last_human is not None:
+        parts.append(f"USER: {last_human.content}")
+
+    return "\n\n".join(parts)
 
 
 def _build_chat_graph(llm: BaseChatModel):
@@ -19,6 +43,8 @@ def _build_chat_graph(llm: BaseChatModel):
     llm_with_tools = llm.bind_tools(tools)
 
     async def call_model(state: MessagesState) -> Dict[str, Any]:
+        messages: list[BaseMessage] = state["messages"]  # type: ignore[assignment]
+        logger.debug("%s", _prompt_without_history(messages))
         response = await llm_with_tools.ainvoke(state["messages"])
         return {"messages": [response]}
 
@@ -51,4 +77,3 @@ def get_chat_graph():
 
 
 __all__ = ["get_chat_graph", "CHAT_PROMPT"]
-
