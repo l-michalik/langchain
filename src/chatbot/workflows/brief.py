@@ -7,7 +7,7 @@ WORKFLOW_INSTRUCTION = "Follow a structured process to gather inputs for creatin
 
 WORKFLOW_STEPS: list[WorkflowStep] = [
     WorkflowStep(
-        key="gather_brief_inputs",
+        key="name",
         instruction="Ask user what is his name",
     )
 ]

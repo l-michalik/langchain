@@ -4,7 +4,8 @@ from typing import Any, Dict, List, Literal
 from dataclasses import dataclass
 
 from langchain_core.messages import BaseMessage
-from core.logging import CYAN, get_logger
+from core.logging import get_logger
+from core.constants import COLORS
 
 
 @dataclass
@@ -20,10 +21,10 @@ class ConversationStore:
         self._active_workflows: Dict[str, Literal["none", "brief", "project"]] = {}
         self._current_session_id: str | None = None
         self._workflows: Dict[str, Any] = {}
-        self._logger = get_logger("WORKFLOW_STATE", CYAN)
+        self._logger = get_logger("WORKFLOW_STATE", COLORS["CYAN"])
 
     def read(self, session_id: str) -> List[BaseMessage]:
-        return list(self._sessions.get(session_id, []))
+        return self._sessions.get(session_id, []).copy()
 
     def append(self, session_id: str, *messages: BaseMessage) -> None:
         self._sessions.setdefault(session_id, []).extend(messages)
@@ -34,7 +35,7 @@ class ConversationStore:
     def set_active_workflow(self, session_id: str, workflow: Literal["none", "brief", "project"]) -> None:
         self._active_workflows[session_id] = workflow
         if workflow == "project":
-            self.init_project_workflow(session_id)
+            self._initialize_project_workflow(session_id)
         else:
             self.set_workflow_step_index(session_id, 0)
 
@@ -44,50 +45,48 @@ class ConversationStore:
     def get_current_session(self) -> str | None:
         return self._current_session_id
 
-    def init_project_workflow(self, session_id: str) -> None:
+    def _initialize_project_workflow(self, session_id: str) -> None:
         self._workflows["project"] = ProjectWorkflowState()
         self._logger.debug(repr(self._workflows))
 
     def set_workflow_value(self, session_id: str, workflow: str, key: str, value: Any) -> None:
         if workflow == "project":
-            state = self._workflows.get("project")
-            if not isinstance(state, ProjectWorkflowState):
-                state = ProjectWorkflowState()
-                self._workflows["project"] = state
-            if hasattr(state, key):
-                setattr(state, key, value)
+            self._set_project_workflow_value(key, value)
         else:
-            workflow_state = self._workflows.setdefault(workflow, {})
-            workflow_state[key] = value
+            self._workflows.setdefault(workflow, {})[key] = value
         self._logger.debug(repr(self._workflows))
+
+    def _set_project_workflow_value(self, key: str, value: Any) -> None:
+        state = self._workflows.get("project", ProjectWorkflowState())
+        if hasattr(state, key):
+            setattr(state, key, value)
+        self._workflows["project"] = state
 
     def get_workflow_value(self, session_id: str, workflow: str, key: str) -> Any | None:
         if workflow == "project":
             state = self._workflows.get("project")
-            if isinstance(state, ProjectWorkflowState):
-                return getattr(state, key, None)
-            return None
+            return getattr(state, key, None) if isinstance(state, ProjectWorkflowState) else None
         return self._workflows.get(workflow, {}).get(key)
 
     def get_workflow_step_index(self, session_id: str) -> int:
         workflow = self.get_active_workflow(session_id)
         index = self.get_workflow_value(session_id, workflow, "step_index")
-        if index is None:
-            return 0
-        try:
-            return int(index)
-        except (TypeError, ValueError):
-            return 0
+        return self._safe_int(index, default=0)
 
     def set_workflow_step_index(self, session_id: str, index: int) -> None:
         workflow = self.get_active_workflow(session_id)
-        if index < 0:
-            index = 0
-        self.set_workflow_value(session_id, workflow, "step_index", int(index))
+        self.set_workflow_value(session_id, workflow, "step_index", max(0, index))
 
     def advance_workflow_step(self, session_id: str) -> None:
         current = self.get_workflow_step_index(session_id)
         self.set_workflow_step_index(session_id, current + 1)
+
+    @staticmethod
+    def _safe_int(value: Any, default: int = 0) -> int:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return default
 
 
 _store: ConversationStore | None = None

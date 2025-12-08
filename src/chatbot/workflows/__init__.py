@@ -12,7 +12,8 @@ from langgraph.prebuilt import ToolNode
 
 from chains.chat import CHAT_PROMPT
 from clients.llm import get_chat_llm
-from core.logging import BLUE, get_logger
+from core.logging import get_logger
+from core.constants import COLORS
 from core.memory import get_conversation_store
 from tools.datetime import relative_date_tool
 from tools.workflow import set_active_workflow_tool
@@ -21,8 +22,7 @@ from . import brief as _brief_workflow
 from . import none as _none_workflow
 from . import project as _project_workflow
 
-logger = get_logger("PROMPT", BLUE)
-
+logger = get_logger("PROMPT", COLORS["BLUE"])
 
 WorkflowName = Literal["none", "brief", "project"]
 _WORKFLOW_MODULES: dict[WorkflowName, ModuleType] = {
