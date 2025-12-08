@@ -19,7 +19,11 @@ CHAT_PROMPT = ChatPromptTemplate.from_messages(
 Provide helpful answers using the format below. 
 {format_instructions}
 
-Current datetime: {current_datetime} ({timezone}).
+CURRENT CONTEXT:
+- Current datetime: {current_datetime} ({timezone}).
+- Active workflow: {active_workflow}
+
+WORKFLOW INSTRUCTIONS: {worflows_instruction}
                 """
             ),
         ),

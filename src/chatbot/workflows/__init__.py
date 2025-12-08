@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any, Dict
+from typing import Any, Dict, Literal
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import BaseMessage
@@ -13,8 +13,22 @@ from clients.llm import get_chat_llm
 from core.logging import BLUE, get_logger
 from tools.datetime import relative_date_tool
 from tools.workflow import set_active_workflow_tool
+from . import brief as _brief_workflow
+from . import none as _none_workflow
+from . import project as _project_workflow
 
 logger = get_logger("PROMPT", BLUE)
+
+
+WorkflowName = Literal["none", "brief", "project"]
+
+
+def get_workflow_instruction(workflow: WorkflowName) -> str:
+    if workflow == "brief":
+        return _brief_workflow.WORKFLOW_INSTRUCTION
+    if workflow == "project":
+        return _project_workflow.WORKFLOW_INSTRUCTION
+    return _none_workflow.WORKFLOW_INSTRUCTION
 
 
 def _prompt_without_history(messages: list[BaseMessage]) -> str:
@@ -76,4 +90,4 @@ def get_chat_graph():
     return _build_chat_graph(llm)
 
 
-__all__ = ["get_chat_graph", "CHAT_PROMPT"]
+__all__ = ["get_chat_graph", "CHAT_PROMPT", "get_workflow_instruction"]
