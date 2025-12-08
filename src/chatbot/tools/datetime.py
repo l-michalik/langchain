@@ -11,7 +11,7 @@ from core.logging import GREEN
 
 @tool("relative_date", args_schema=RelativeDateInput)
 def relative_date_tool(current_datetime: str, timezone: str, offset_days: int, day_type: str = "calendar") -> str:
-    """Use this only if you have to calculate a date relative to another date."""
+    """Use this tool only if you have to calculate a date relative to another date, don't invoke it otherwise."""
     logger = get_logger("RELATIVE_DATE_TOOL", color=GREEN)
     start = parse_datetime(current_datetime, timezone)
     if day_type == "business":

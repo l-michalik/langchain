@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from collections.abc import Sequence
+from types import ModuleType
 from typing import Any, Dict, Literal
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -23,14 +25,29 @@ logger = get_logger("PROMPT", BLUE)
 
 
 WorkflowName = Literal["none", "brief", "project"]
+_WORKFLOW_MODULES: dict[WorkflowName, ModuleType] = {
+    "brief": _brief_workflow,
+    "project": _project_workflow,
+    "none": _none_workflow,
+}
+
+
+def _get_workflow_module(workflow: WorkflowName) -> ModuleType:
+    return _WORKFLOW_MODULES.get(workflow, _none_workflow)
+
+
+def _get_workflow_steps(workflow: WorkflowName) -> list[Any]:
+    steps = getattr(_get_workflow_module(workflow), "WORKFLOW_STEPS", [])
+    if isinstance(steps, list):
+        return steps
+    if isinstance(steps, Sequence) and not isinstance(steps, (str, bytes)):
+        return list(steps)
+    return []
 
 
 def get_workflow_instruction(workflow: WorkflowName) -> str:
-    if workflow == "brief":
-        return _brief_workflow.WORKFLOW_INSTRUCTION.strip()
-    if workflow == "project":
-        return _project_workflow.WORKFLOW_INSTRUCTION.strip()
-    return _none_workflow.WORKFLOW_INSTRUCTION.strip()
+    instruction = getattr(_get_workflow_module(workflow), "WORKFLOW_INSTRUCTION", "")
+    return str(instruction).strip()
 
 
 def get_workflow_step_instruction(workflow: WorkflowName) -> str:
@@ -40,14 +57,7 @@ def get_workflow_step_instruction(workflow: WorkflowName) -> str:
     if session_id is not None:
         step_index = store.get_workflow_step_index(session_id)
 
-    raw: list[Any]
-    if workflow == "brief":
-        raw = getattr(_brief_workflow, "WORKFLOW_STEPS", [])
-    elif workflow == "project":
-        raw = getattr(_project_workflow, "WORKFLOW_STEPS", [])
-    else:
-        raw = getattr(_none_workflow, "WORKFLOW_STEPS", [])
-
+    raw = _get_workflow_steps(workflow)
     if not raw or step_index < 0 or step_index >= len(raw):
         return ""
 
@@ -95,14 +105,7 @@ def get_workflow_step_validator(workflow: WorkflowName) -> ValidatorFn | None:
     if session_id is not None:
         step_index = store.get_workflow_step_index(session_id)
 
-    raw: list[Any]
-    if workflow == "brief":
-        raw = getattr(_brief_workflow, "WORKFLOW_STEPS", [])
-    elif workflow == "project":
-        raw = getattr(_project_workflow, "WORKFLOW_STEPS", [])
-    else:
-        raw = getattr(_none_workflow, "WORKFLOW_STEPS", [])
-
+    raw = _get_workflow_steps(workflow)
     if not raw or step_index < 0 or step_index >= len(raw):
         return None
 
@@ -124,13 +127,7 @@ def get_workflow_step_field(workflow: WorkflowName) -> tuple[str | None, str | N
     if session_id is not None:
         step_index = store.get_workflow_step_index(session_id)
 
-    if workflow == "brief":
-        raw = getattr(_brief_workflow, "WORKFLOW_STEPS", [])
-    elif workflow == "project":
-        raw = getattr(_project_workflow, "WORKFLOW_STEPS", [])
-    else:
-        raw = getattr(_none_workflow, "WORKFLOW_STEPS", [])
-
+    raw = _get_workflow_steps(workflow)
     if not raw or step_index < 0 or step_index >= len(raw):
         return None, None
 
