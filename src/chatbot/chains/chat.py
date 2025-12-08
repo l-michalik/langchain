@@ -23,7 +23,11 @@ CURRENT CONTEXT:
 - Current datetime: {current_datetime} ({timezone}).
 - Active workflow: {active_workflow}
 
-WORKFLOW INSTRUCTIONS: {worflows_instruction}
+WORKFLOW INSTRUCTION:
+{workflow_instruction}
+
+WORKFLOW STEP INSTRUCTION:
+{workflow_step_instruction}
                 """
             ),
         ),

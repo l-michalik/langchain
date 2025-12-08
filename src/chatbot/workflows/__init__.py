@@ -26,10 +26,32 @@ WorkflowName = Literal["none", "brief", "project"]
 
 def get_workflow_instruction(workflow: WorkflowName) -> str:
     if workflow == "brief":
-        return _brief_workflow.WORKFLOW_INSTRUCTION
+        return _brief_workflow.WORKFLOW_INSTRUCTION.strip()
     if workflow == "project":
-        return _project_workflow.WORKFLOW_INSTRUCTION
-    return _none_workflow.WORKFLOW_INSTRUCTION
+        return _project_workflow.WORKFLOW_INSTRUCTION.strip()
+    return _none_workflow.WORKFLOW_INSTRUCTION.strip()
+
+
+def get_workflow_step_instruction(workflow: WorkflowName) -> str:
+    if workflow == "brief":
+        raw = getattr(_brief_workflow, "WORKFLOW_STEPS", [])
+    elif workflow == "project":
+        raw = getattr(_project_workflow, "WORKFLOW_STEPS", [])
+    else:
+        raw = getattr(_none_workflow, "WORKFLOW_STEPS", [])
+
+    if not raw:
+        return ""
+
+    step: Any = raw[0]
+    if hasattr(step, "get"):
+        instruction = step.get("instruction")
+    else:
+        instruction = getattr(step, "instruction", None)
+
+    if instruction is None:
+        return ""
+    return str(instruction).strip()
 
 
 def _prompt_without_history(messages: list[BaseMessage]) -> str:
@@ -64,10 +86,12 @@ def _build_chat_graph(llm: BaseChatModel):
         if session_id is None:
             return
 
-        active_workflow: WorkflowName = store.get_active_workflow(session_id)  # type: ignore[assignment]
+        active_workflow: WorkflowName = store.get_active_workflow(session_id)
         workflow_instruction = get_workflow_instruction(active_workflow)
+        workflow_step_instruction = get_workflow_step_instruction(active_workflow)
 
-        marker = "WORKFLOW INSTRUCTIONS:"
+        marker = "WORKFLOW INSTRUCTION:"
+        step_marker = "WORKFLOW STEP INSTRUCTION:"
         for message in messages:
             msg_type = getattr(message, "type", "")
             if msg_type != "system":
@@ -75,8 +99,17 @@ def _build_chat_graph(llm: BaseChatModel):
             content = getattr(message, "content", "")
             if not isinstance(content, str) or marker not in content:
                 continue
-            prefix, _ = content.split(marker, 1)
-            message.content = f"{prefix}{marker} {workflow_instruction}"
+
+            try:
+                prefix, _ = content.split(marker, 1)
+            except ValueError:
+                continue
+
+            new_block = (
+                f"{marker}\n{workflow_instruction}\n\n"
+                f"{step_marker}\n{workflow_step_instruction}"
+            )
+            message.content = f"{prefix}{new_block}"
             break
 
     async def call_model(state: MessagesState) -> Dict[str, Any]:
@@ -114,4 +147,4 @@ def get_chat_graph():
     return _build_chat_graph(llm)
 
 
-__all__ = ["get_chat_graph", "CHAT_PROMPT", "get_workflow_instruction"]
+__all__ = ["get_chat_graph", "CHAT_PROMPT", "get_workflow_instruction", "get_workflow_step_instruction"]

@@ -1,6 +1,13 @@
 from __future__ import annotations
 
-WORKFLOW_INSTRUCTION = """
-Ask user for a name
-"""
+from .base import WorkflowStep
 
+WORKFLOW_INSTRUCTION = "Follow a structured process to gather inputs for creating a brief."
+
+
+WORKFLOW_STEPS: list[WorkflowStep] = [
+    WorkflowStep(
+        key="gather_brief_inputs",
+        instruction="Ask user what is his name",
+    )
+]
