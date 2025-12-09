@@ -12,11 +12,8 @@ from core.constants import COLORS
 @tool("set_active_workflow", args_schema=SetActiveWorkflowInput)
 def set_active_workflow_tool(workflow: Literal["none", "brief", "project"]) -> str:
     """
-    Use this tool to change the active workflow for the current chat session.
-    Execute this tool only when the user requests to change the workflow.
-    - 'none'    – default behaviour
-    - 'brief'   – for creating or refining a brief.
-    - 'project' – for defining or managing a project.
+    Execute this tool only when user explicitly requests to change the active workflow.
+    If user say "create a brief/project", this tool should be triggered.
     """
     logger = _get_logger()
     store = get_conversation_store()
