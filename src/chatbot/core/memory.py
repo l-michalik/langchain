@@ -27,6 +27,7 @@ class ConversationStore:
     def __init__(self) -> None:
         self._sessions: Dict[str, List[BaseMessage]] = {}
         self._active_workflows: Dict[str, Literal["none", "brief", "project"]] = {}
+        self._default_workflow: Literal["none", "brief", "project"] = "brief"
         self._current_session_id: str | None = None
         self._workflows: Dict[str, Any] = {}
         self._logger = get_logger("WORKFLOW_STATE", COLORS["CYAN"])
@@ -38,7 +39,7 @@ class ConversationStore:
         self._sessions.setdefault(session_id, []).extend(messages)
 
     def get_active_workflow(self, session_id: str) -> Literal["none", "brief", "project"]:
-        return self._active_workflows.get(session_id, "none")
+        return self._active_workflows.get(session_id, self._default_workflow)
 
     def set_active_workflow(self, session_id: str, workflow: Literal["none", "brief", "project"]) -> None:
         self._active_workflows[session_id] = workflow
@@ -51,6 +52,8 @@ class ConversationStore:
 
     def set_current_session(self, session_id: str) -> None:
         self._current_session_id = session_id
+        if session_id not in self._active_workflows:
+            self.set_active_workflow(session_id, self._default_workflow)
 
     def get_current_session(self) -> str | None:
         return self._current_session_id
