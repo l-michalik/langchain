@@ -12,7 +12,7 @@ from core.constants import COLORS
 @tool("set_active_workflow", args_schema=SetActiveWorkflowInput)
 def set_active_workflow_tool(workflow: Literal["none", "brief", "project"]) -> str:
     """
-    Execute this tool only when user explicitly requests to change the active workflow.
+    Execute this tool only when user explicitly requests to change the active workflow or say 'create a brief' or 'create a project'.
     If user say "create a brief/project", this tool should be triggered.
     """
     logger = _get_logger()

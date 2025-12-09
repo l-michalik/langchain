@@ -7,6 +7,10 @@ from pydantic import BaseModel, Field
 
 class ChatLLMResult(BaseModel):
     answer: str
+    validator_value: str | float | bool | None = Field(
+        None,
+        description="Value extracted from the user's message that should be validated for the current workflow step.",
+    )
 
 
 CHAT_PARSER = PydanticOutputParser(pydantic_object=ChatLLMResult)
@@ -22,6 +26,8 @@ Provide helpful answers using the format below.
 CURRENT CONTEXT:
 - Current datetime: {current_datetime} ({timezone}).
 - Active workflow: {active_workflow}
+- Workflow field to capture: {workflow_step_field} (type: {workflow_step_field_type})
+- If a workflow field is present, extract its value into `validator_value` alongside your answer.
 
 WORKFLOW INSTRUCTION:
 {workflow_instruction}
