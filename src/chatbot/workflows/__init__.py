@@ -206,7 +206,7 @@ def _build_chat_graph(llm: BaseChatModel):
     async def call_model(state: MessagesState) -> Dict[str, Any]:
         messages: list[BaseMessage] = state["messages"]  # type: ignore[assignment]
         _refresh_system_workflow_instruction(messages)
-        logger.debug("%s", _prompt_without_history(messages))
+        logger.debug("%s", '')
         response = await llm_with_tools.ainvoke(state["messages"])
         return {"messages": [response]}
 

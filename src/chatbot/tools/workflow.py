@@ -12,14 +12,11 @@ from core.constants import COLORS
 @tool("set_active_workflow", args_schema=SetActiveWorkflowInput)
 def set_active_workflow_tool(workflow: Literal["none", "brief", "project"]) -> str:
     """
-    Set the active workflow for a chat session.
-
-    Use this tool to switch the current conversation mode between:
+    Use this tool to change the active workflow for the current chat session.
+    Execute this tool only when the user requests to change the workflow.
     - 'none'    – default behaviour
     - 'brief'   – for creating or refining a brief.
     - 'project' – for defining or managing a project.
-
-    Call this tool with the appropriate workflow value before answering the user.
     """
     logger = _get_logger()
     store = get_conversation_store()
