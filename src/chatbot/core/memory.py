@@ -27,7 +27,7 @@ class ConversationStore:
     def __init__(self) -> None:
         self._sessions: Dict[str, List[BaseMessage]] = {}
         self._active_workflows: Dict[str, Literal["none", "brief", "project"]] = {}
-        self._default_workflow: Literal["none", "brief", "project"] = "brief"
+        self._default_workflow: Literal["none", "brief", "project"] = "none"
         self._current_session_id: str | None = None
         self._workflows: Dict[str, Any] = {}
         self._logger = get_logger("WORKFLOW_STATE", COLORS["CYAN"])
