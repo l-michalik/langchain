@@ -144,27 +144,6 @@ def get_workflow_step_field(workflow: WorkflowName) -> tuple[str | None, str | N
     field_type = "number" if workflow == "project" and name_str == "budget" else "string"
     return name_str, field_type
 
-
-def _prompt_without_history(messages: list[BaseMessage]) -> str:
-    system_msg: BaseMessage | None = None
-    last_human: BaseMessage | None = None
-
-    for message in messages:
-        msg_type = getattr(message, "type", "")
-        if msg_type == "system" and system_msg is None:
-            system_msg = message
-        if msg_type == "human":
-            last_human = message
-
-    parts: list[str] = []
-    if system_msg is not None:
-        parts.append(f"SYSTEM:\n{system_msg.content}")
-    if last_human is not None:
-        parts.append(f"USER: {last_human.content}")
-
-    return "\n\n".join(parts)
-
-
 def _build_chat_graph(llm: BaseChatModel):
     tools = [set_active_workflow_tool]
     tool_node = ToolNode(tools)
@@ -206,7 +185,7 @@ def _build_chat_graph(llm: BaseChatModel):
     async def call_model(state: MessagesState) -> Dict[str, Any]:
         messages: list[BaseMessage] = state["messages"]  # type: ignore[assignment]
         _refresh_system_workflow_instruction(messages)
-        logger.debug("%s", '')
+        logger.debug("%s", messages)
         response = await llm_with_tools.ainvoke(state["messages"])
         return {"messages": [response]}
 
